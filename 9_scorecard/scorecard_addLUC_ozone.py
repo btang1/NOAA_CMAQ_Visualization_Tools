@@ -244,70 +244,91 @@ for i in range(len(OBS_Region_Date_Urban_list_noNan)+len(OBS_Region_Date_Rural_l
             cmaq54_here = MODEL_54_Region_Date_Rural_list_noNan[int((i-1)/2)][j]
             OBS_here = OBS_Region_Date_Rural_list_noNan[int((i-1)/2)][j]
         
-        
-        key_word_BW = BW(OBS_here,cmaq52_here, cmaq54_here)  #ORDER: airnow, cmaq_52, cmaq_54
-        key_word_SL = SigLevel(cmaq52_here, cmaq54_here)     #ORDER: cmaq_52, cmaq_54
-        
-        if key_word_SL == 'No significant difference':
-            output_matrix[i][j] = 0   #'no significant difference'
-            
-        elif key_word_SL == 'significant difference, with 95% confident':
-            if key_word_BW == 'better':
-                output_matrix[i][j] = 20  #'95% better'
-            elif key_word_BW == 'worse':
-                output_matrix[i][j] = -20 #'95% worse'
-            else:
-                output_matrix[i][j] = 0  #'95% equal'
-                
-        elif key_word_SL == 'significant difference, with 99% confident':
-            if key_word_BW == 'better':
-                output_matrix[i][j] = 50  #'99% better'
-            elif key_word_BW == 'worse':
-                output_matrix[i][j] = -50 #'99% worse'
-            else:
-                output_matrix[i][j] = 0  #'99% equal'
-                
+        if OBS_here == []:
+            output_matrix[i][j] = np.nan  # no values, need to change
         else:
-            if key_word_BW == 'better':
-                output_matrix[i][j] = 100  #'99.9% better'
-            elif key_word_BW == 'worse':
-                output_matrix[i][j] = -100 #'99.9% worse'
+            key_word_BW = BW(OBS_here,cmaq52_here, cmaq54_here)  #ORDER: airnow, cmaq_52, cmaq_54
+            key_word_SL = SigLevel(cmaq52_here, cmaq54_here)     #ORDER: cmaq_52, cmaq_54
+            
+            if key_word_SL == 'No significant difference':
+                output_matrix[i][j] = 0   #'no significant difference'
+                
+            elif key_word_SL == 'significant difference, with 95% confident':
+                if key_word_BW == 'better':
+                    output_matrix[i][j] = 20  #'95% better'
+                elif key_word_BW == 'worse':
+                    output_matrix[i][j] = -20 #'95% worse'
+                else:
+                    output_matrix[i][j] = 0  #'95% equal'
+                    
+            elif key_word_SL == 'significant difference, with 99% confident':
+                if key_word_BW == 'better':
+                    output_matrix[i][j] = 50  #'99% better'
+                elif key_word_BW == 'worse':
+                    output_matrix[i][j] = -50 #'99% worse'
+                else:
+                    output_matrix[i][j] = 0  #'99% equal'
+                    
             else:
-                output_matrix[i][j] = 0   #'99.9% equal'     
+                if key_word_BW == 'better':
+                    output_matrix[i][j] = 100  #'99.9% better'
+                elif key_word_BW == 'worse':
+                    output_matrix[i][j] = -100 #'99.9% worse'
+                else:
+                    output_matrix[i][j] = 0   #'99.9% equal'      
 
 '''
 5) ploting
 '''
 fig, ax = plt.subplots(figsize=(18,10))
 
-ax.set_title('ScoreCard CMAQv5.4 vs. CMAQv5.2 \nEvaluated against AirNow OBS',fontsize = 30)
-ax.set_xlabel('Date',fontsize = 30)
-ax.set_ylabel('EPA Regions',fontsize = 30)
+ax.set_title('O$_3$ CMAQv5.4 vs. v5.2 Evaluated against AirNow OBS \n based on RMSE & Signigicant Level',fontsize = 30)
+# ax.set_xlabel('Date',fontsize = 30)
+ax.set_ylabel('Regions',fontsize = 30)
 
+'''
+5-2) set ticks
+'''
 ax.tick_params(labelsize = 20)
-y_labels =  []
-for i in range(len(region_list)):
-    y_labels.append(region_list[i]+' urban')
-    y_labels.append(region_list[i]+' rural')
+
 x_labels = ['08/01','08/06','08/11','08/16','08/21','08/26','08/30']
-plt.xticks([0.5,5.5,10.5,15.5,20.5,26.5,29.5],
-            x_labels,rotation=0)   
-plt.yticks([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,
-            10.5,11.5,12.5,13.5,14.5,15.5,16.5,17.5,18.5,19.5],
-            y_labels)           
+ax.set_xticks([0.5,5.5,10.5,15.5,20.5,25.5,29.5],
+            x_labels,rotation=0)  
 
+y_labels =  region_list   
+ax.set_yticks([1,3,5,7,9,11,13,15,17,19],
+            y_labels)    
+      
 plt.gca().invert_yaxis()  #to verse Y axis 
-         
-plot1= plt.pcolormesh(output_matrix,cmap='bwr',edgecolor='k',vmin=-100,vmax=100)
 
-cb = fig.colorbar(plot1,ticks=[-100,-50,-20,0,20,50,100])
+'''
+5-2-2) add another y-axis
+'''
+ax2=ax.secondary_yaxis('right')
+ax2.tick_params(labelsize = 20)
+y2_labels =[]
+for i in range(len(region_list)):
+    y2_labels.append('urban')
+    y2_labels.append('rural')
+ax2.set_yticks([i+0.5 for i in range(len(region_list)*2)],
+            y2_labels)  
+'''
+5-3) set colorbar
+'''
+plot1= plt.pcolormesh(output_matrix,cmap='cividis',edgecolor='k',vmin=-100,vmax=100) #colorblind frindly
+# plot1= plt.pcolormesh(output_matrix,cmap='coolwarm',edgecolor='k',vmin=-100,vmax=100)
+
+
+cb = fig.colorbar(plot1,ticks=[-100,-50,-20,0,20,50,100],pad=0.1)
 cb.ax.set_yticklabels(['99.9% Worse','99% Worse','95% Worse',
                   'No Significant Difference',
                   '95% Better','99% Better','99.9% Better'])
 cb.ax.tick_params(labelsize = 20)
 
-plt.savefig('ScoreCard_LUC_'+save_name+'.png', dpi=600)
-
+'''
+5-4) save figure
+'''
+plt.savefig('ScoreCard_LUC2_'+save_name+'.png', dpi=600)
 
 
 
